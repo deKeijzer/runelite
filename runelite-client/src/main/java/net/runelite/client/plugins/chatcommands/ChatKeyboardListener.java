@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Seth <Sethtroll3@gmail.com>
+ * Copyright (c) 2018, Adam <Adam@sigterm.info>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -22,55 +22,75 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package net.runelite.client.plugins.jewellerycount;
+package net.runelite.client.plugins.chatcommands;
 
+import java.awt.event.KeyEvent;
 import javax.inject.Inject;
-import net.runelite.api.ChatMessageType;
-import net.runelite.client.plugins.Plugin;
-import net.runelite.client.ui.overlay.Overlay;
-import com.google.common.eventbus.Subscribe;
-import com.google.inject.Provides;
-import javax.inject.Inject;
-import net.runelite.api.events.ChatMessage;
-import net.runelite.client.Notifier;
-import net.runelite.client.config.ConfigManager;
-import net.runelite.client.plugins.PluginDescriptor;
+import javax.inject.Singleton;
+import net.runelite.api.Client;
+import net.runelite.api.VarClientStr;
+import net.runelite.client.callback.ClientThread;
+import net.runelite.client.input.KeyListener;
 
-@PluginDescriptor(
-	name = "Jewellery Count"
-)
-public class JewelleryCountPlugin extends Plugin
+@Singleton
+public class ChatKeyboardListener implements KeyListener
 {
 	@Inject
-	private JewelleryCountOverlay overlay;
+	private Client client;
 
 	@Inject
-	private Notifier notifier;
-
-	@Inject
-	private JewelleryCountConfig config;
+	private ClientThread clientThread;
 
 	@Override
-	public Overlay getOverlay()
+	public void keyTyped(KeyEvent e)
 	{
-		return overlay;
+
 	}
 
-	@Provides
-	JewelleryCountConfig getConfig(ConfigManager configManager)
+	@Override
+	public void keyPressed(KeyEvent e)
 	{
-		return configManager.getConfig(JewelleryCountConfig.class);
-	}
-
-	@Subscribe
-	public void onChatMessage(ChatMessage event)
-	{
-		if (event.getType() == ChatMessageType.SERVER)
+		if (!e.isControlDown())
 		{
-			if (config.recoilNotification() && event.getMessage().contains("<col=7f007f>Your Ring of Recoil has shattered.</col>"))
-			{
-				notifier.notify("Your Ring of Recoil has shattered");
-			}
+			return;
 		}
+
+		switch (e.getKeyCode())
+		{
+			case KeyEvent.VK_W:
+				String input = client.getVar(VarClientStr.CHATBOX_TYPED_TEXT);
+				if (input != null)
+				{
+					// remove trailing space
+					while (input.endsWith(" "))
+					{
+						input = input.substring(0, input.length() - 1);
+					}
+
+					// find next word
+					int idx = input.lastIndexOf(' ');
+					final String replacement;
+					if (idx != -1)
+					{
+						replacement = input.substring(0, idx);
+					}
+					else
+					{
+						replacement = "";
+					}
+
+					clientThread.invokeLater(() -> client.setVar(VarClientStr.CHATBOX_TYPED_TEXT, replacement));
+				}
+				break;
+			case KeyEvent.VK_BACK_SPACE:
+				clientThread.invokeLater(() -> client.setVar(VarClientStr.CHATBOX_TYPED_TEXT, ""));
+				break;
+		}
+	}
+
+	@Override
+	public void keyReleased(KeyEvent e)
+	{
+
 	}
 }

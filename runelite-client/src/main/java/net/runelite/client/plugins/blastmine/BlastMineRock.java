@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Seth <Sethtroll3@gmail.com>
+ * Copyright (c) 2018, Unmoon <https://github.com/Unmoon>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -22,24 +22,41 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package net.runelite.client.plugins.jewellerycount;
+package net.runelite.client.plugins.blastmine;
 
-public enum JewelleryType
+import java.time.Duration;
+import java.time.Instant;
+import lombok.Getter;
+import net.runelite.api.GameObject;
+
+class BlastMineRock
 {
-	GLORY,
-	ROD,
-	GAMES,
-	ROW,
-	ROS,
-	SKILLS,
-	CBRACE,
-	DIGSITE,
-	BURNING,
-	PASSAGE,
-	RETURNING,
-	TCRYSTAL,
-	PHARAO,
-	WATERSKIN,
-	IMP_IN_A_BOX,
-	ELYRE
+	private static final Duration PLANT_TIME = Duration.ofSeconds(30);
+	private static final Duration FUSE_TIME = Duration.ofMillis(4200);
+
+	@Getter
+	private final GameObject gameObject;
+
+	@Getter
+	private final BlastMineRockType type;
+
+	private final Instant creationTime = Instant.now();
+
+	BlastMineRock(final GameObject gameObject, BlastMineRockType blastMineRockType)
+	{
+		this.gameObject = gameObject;
+		this.type = blastMineRockType;
+	}
+
+	double getRemainingFuseTimeRelative()
+	{
+		Duration duration = Duration.between(creationTime, Instant.now());
+		return duration.compareTo(FUSE_TIME) < 0 ? (double) duration.toMillis() / FUSE_TIME.toMillis() : 1;
+	}
+
+	double getRemainingTimeRelative()
+	{
+		Duration duration = Duration.between(creationTime, Instant.now());
+		return duration.compareTo(PLANT_TIME) < 0 ? (double) duration.toMillis() / PLANT_TIME.toMillis() : 1;
+	}
 }
